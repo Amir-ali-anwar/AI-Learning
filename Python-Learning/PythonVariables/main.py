@@ -37,3 +37,20 @@ print(x + y + z)
 
 
 # Global Variables
+
+
+q = "awesome"
+
+def myfunc():
+  print("Amir is " + q)
+
+myfunc()
+
+# The global Keyword
+
+def myFun():
+    global customVar
+    customVar = 'yahoo'
+    return customVar
+
+print(myFun())
