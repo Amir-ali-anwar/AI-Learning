@@ -54,3 +54,16 @@ def myFun():
     return customVar
 
 print(myFun())
+
+x = "awesome"
+
+def myfunc():
+  global x
+  x = "fantastic"
+
+myfunc()
+
+print("Python is " + x)
+
+
+print(myfunc())
