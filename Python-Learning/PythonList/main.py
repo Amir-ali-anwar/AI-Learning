@@ -18,3 +18,16 @@ print(thislist)
 thislist.remove('apple')
 
 print(thislist)
+
+# Iterating the list
+newlist=[]
+for x in thislist:
+    if "o" in x:
+        newlist.append(x)
+  
+  
+print('new list',newlist)
+        
+        
+
+    
