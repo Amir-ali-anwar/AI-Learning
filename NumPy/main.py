@@ -42,4 +42,53 @@ print(arr5[2] + arr5[3])
 
 arr6 = np.array([[1,2,3,4,5], [6,7,8,9,10]])
 
+print("arr.dtype",arr.dtype)
+
 print('4th element on 2nd row: ', arr6[1, 3])  # Output: 9
+
+
+arr7 = np.array([1, 2, 3, 4], dtype='S')
+
+print(arr7)
+print(arr7.dtype)
+
+
+
+# =================================================================
+
+
+
+arr7= np.array([1,2,3,4], dtype='i4')
+
+print("arr7",arr7)
+print("arr7.dtype",arr7.dtype)
+
+
+# =================================================================
+
+
+
+arr8 = np.array(['1', '2', '3'], dtype='i')
+
+print("arr8",arr8)
+
+
+# =================================================================
+
+
+arr9 = np.array([1.1, 2.1, 3.1])
+
+newarr1=  arr9.astype('i')
+print(newarr1)
+print(newarr1.dtype)
+
+
+
+# =================================================================
+
+arr10 = np.array([1, 2, 3, 4, 5])
+x = arr10.copy()
+arr10[0] = 42
+
+print(arr10)
+print(x)
