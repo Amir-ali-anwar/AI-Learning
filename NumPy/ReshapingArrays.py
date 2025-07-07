@@ -24,7 +24,22 @@ arr3 = np.array([1,2,3,4,5], ndmin=5)
 
 # Accessing Array
 arr4 = np.array([[1,2,3],[4,5,6]])
-print(arr4[1,:2])
+# print(arr4[1,:2])
 
 
+# 3-D Array
 
+arr5 = np.array([ [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+    [[13, 14, 15], [16, 17, 18], [19, 20, 21]]])
+
+# print(arr5[0:5])
+# print(arr5.shape)
+
+
+# Reshape From 1-D to 3-D
+
+arr6 = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+
+newarr = arr6.reshape(2, 3, 2)
+
+print(newarr)
