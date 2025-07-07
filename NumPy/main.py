@@ -140,3 +140,5 @@ arr12 = np.array([1, 2, 3, 4], ndmin=5)
 
 print(arr12)
 print('shape of array :', arr12.shape)
+
+
