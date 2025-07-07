@@ -102,8 +102,24 @@ arr11 = np.array([2, 3, 4, 5])
 viewArray = arr11.view()
 arr11[0] = 42
 
-print(arr11)
-print(viewArray)
+print("arr11",arr11)
+print("viewArray",viewArray)
+
+
+
+# =================================================================
+
+
+
+# Check if Array Owns its Data
+
+
+
+xCopyArray = arr11.copy()
+yViewArray = arr11.view()
+
+print(xCopyArray.base)
+print(yViewArray.base)
 
 
 
