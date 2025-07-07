@@ -86,9 +86,26 @@ print(newarr1.dtype)
 
 # =================================================================
 
+# COPY:
 arr10 = np.array([1, 2, 3, 4, 5])
 x = arr10.copy()
 arr10[0] = 42
 
 print(arr10)
 print(x)
+
+
+# =================================================================
+
+
+arr11 = np.array([2, 3, 4, 5])
+viewArray = arr11.view()
+arr11[0] = 42
+
+print(arr11)
+print(viewArray)
+
+
+
+
+
