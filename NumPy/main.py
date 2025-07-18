@@ -138,8 +138,8 @@ print(arr12.shape)
 
 arr12 = np.array([1, 2, 3, 4], ndmin=5)
 
-print(arr12)
-print('shape of array :', arr12.shape)
+# print(arr12)
+# print('shape of array :', arr12.shape)
 
 
 
@@ -151,7 +151,7 @@ print('shape of array :', arr12.shape)
 
 arr13= np.array([1,2,3,4,5,6,7,8,9])
 
-print("arr[arr>2]",arr13[arr13>2])
+# print("arr[arr>2]",arr13[arr13>2])
 
 
 
@@ -174,10 +174,44 @@ arr14 = np.array([1, 2, 3, 4, 5])
 
 # Aggregate/Statistical Functions
 
-arr = np.array([1, 2, 3, 4, 5])
+arr15 = np.array([1, 2, 3, 4, 5])
 
-print("Sum:", np.sum(arr))            # 15
-print("Mean:", np.mean(arr))          # 3.0
-print("Median:", np.median(arr))      # 3.0
-print("Standard Deviation:", np.std(arr))  # ~1.414
-print("Variance:", np.var(arr))   
+# print("Sum:", np.sum(arr))            # 15
+# print("Mean:", np.mean(arr))          # 3.0
+# print("Median:", np.median(arr))      # 3.0
+# print("Standard Deviation:", np.std(arr))  # ~1.414
+# print("Variance:", np.var(arr))   
+
+
+# =================================================================
+
+
+# Min/Max and Index Functions
+
+
+arr15 = np.array([10, 20, 5, 40])
+
+print("Min value:", np.min(arr15))          # 5
+print("Max value:", np.max(arr15))          # 40
+print("Index of Min:", np.argmin(arr15))    # 2
+print("Index of Max:", np.argmax(arr15))    # 3
+
+
+
+scores = np.array([50, 80, 45, 90, 60])
+best_student_index = np.argmax(scores)
+print("Top scorer is student at index:", best_student_index)
+
+
+
+# =====================================================================
+
+# Broadcasting 
+
+A = np.array([[1, 2, 3],
+              [4, 5, 6]])
+
+B = np.array([1, 0, -1])
+
+
+print(A+B)
