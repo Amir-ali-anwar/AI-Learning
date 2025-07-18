@@ -142,3 +142,42 @@ print(arr12)
 print('shape of array :', arr12.shape)
 
 
+
+# =================================================================
+
+
+# Array Slicing & Boolean Indexing
+
+
+arr13= np.array([1,2,3,4,5,6,7,8,9])
+
+print("arr[arr>2]",arr13[arr13>2])
+
+
+
+# =================================================================
+
+
+# Mathematical Functions
+
+
+arr14 = np.array([1, 2, 3, 4, 5])
+
+# print("Square Root:", np.sqrt(arr14))
+# print("Exponential:", np.exp(arr14))
+# print("Log (natural):", np.log(arr14))
+# print("Sine:", np.sin(arr14))
+# print("Cosine:", np.cos(arr14))
+
+# =================================================================
+
+
+# Aggregate/Statistical Functions
+
+arr = np.array([1, 2, 3, 4, 5])
+
+print("Sum:", np.sum(arr))            # 15
+print("Mean:", np.mean(arr))          # 3.0
+print("Median:", np.median(arr))      # 3.0
+print("Standard Deviation:", np.std(arr))  # ~1.414
+print("Variance:", np.var(arr))   
