@@ -191,16 +191,16 @@ arr15 = np.array([1, 2, 3, 4, 5])
 
 arr15 = np.array([10, 20, 5, 40])
 
-print("Min value:", np.min(arr15))          # 5
-print("Max value:", np.max(arr15))          # 40
-print("Index of Min:", np.argmin(arr15))    # 2
-print("Index of Max:", np.argmax(arr15))    # 3
+# print("Min value:", np.min(arr15))          # 5
+# print("Max value:", np.max(arr15))          # 40
+# print("Index of Min:", np.argmin(arr15))    # 2
+# print("Index of Max:", np.argmax(arr15))    # 3
 
 
 
 scores = np.array([50, 80, 45, 90, 60])
 best_student_index = np.argmax(scores)
-print("Top scorer is student at index:", best_student_index)
+# print("Top scorer is student at index:", best_student_index)
 
 
 
@@ -214,4 +214,18 @@ A = np.array([[1, 2, 3],
 B = np.array([1, 0, -1])
 
 
-print(A+B)
+# print(A+B)
+
+
+# =====================================================================
+
+# Random Module
+
+
+# print("np.random.rand()",np.random.rand())           # Single float between 0 and 1
+# print(np.random.rand(3))          # 1D array of 3 random floats
+# print(np.random.rand(2, 3))       # 2D array
+
+
+
+print(np.random.randint(1,10))
