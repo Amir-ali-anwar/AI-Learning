@@ -214,6 +214,17 @@ A = np.array([[1, 2, 3],
 B = np.array([1, 0, -1])
 
 
+print(A+B)
+
+
+
+C = np.array([[1, 2, 3],
+              [4, 5, 6]])
+
+D = np.array([[10],
+              [20]])
+
+print(C + D)
 # print(A+B)
 
 
