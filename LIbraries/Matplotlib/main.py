@@ -44,17 +44,32 @@ import numpy as np
 
 
 
-# ===============================
+# ===================================
 
 
 # Default X-Points
 
 
-ypoints = np.array([3, 8, 1, 10, 5, 7])
+# ypoints = np.array([3, 8, 1, 10, 5, 7])
 
 # plt.plot(ypoints, marker='o')
 # plt.plot(ypoints, marker='*')
-plt.plot(ypoints, marker= "o", ms=10 , mec="r", mfc="g")
+# plt.plot(ypoints, marker= "o", ms=10 , mec="r", mfc="g")
+# plt.plot(ypoints, marker= "o", ms=15 ,mec = '#4CAF50', mfc = '#4CAF50')
 
-plt.savefig('saveplot.jpg')
+# plt.savefig('saveplot.jpg')
+# plt.show()
+
+
+# ======================================
+
+
+
+# Linestyle
+
+
+ypoints = np.array([3, 8, 1, 10])
+
+plt.plot(ypoints, linestyle = 'dotted')
 plt.show()
+
