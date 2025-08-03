@@ -5,7 +5,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.preprocessing import StandardScaler
-
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
@@ -50,8 +53,6 @@ df['diagnosis']=df['diagnosis'].map({'M':1,'B':0})
 x= df.drop('diagnosis', axis=1)
 y= df['diagnosis']
 
-# Split into train/test sets
-
 x_train,x_test,y_train,y_Test= train_test_split(x,y,test_size=0.2,random_state=42)
 
 # Scale features
@@ -59,17 +60,22 @@ scaler = StandardScaler()
 x_train_scaled = scaler.fit_transform(x_train)
 x_test_scaled = scaler.transform(x_test)
 
-model= LogisticRegression()
 
 
-model.fit(x_train_scaled,y_train)
+def evaluate_model(model, x_train, y_train, x_test, y_test):
+    model.fit(x_train, y_train)
+    y_predict = model.predict(x_test)
+    acc = accuracy_score(y_test, y_predict)
+    print(f"Model: {model.__class__.__name__}")
+    print(f"Accuracy: {acc:.4f}")
+    print('Confusion Matrix:\n', confusion_matrix(y_test, y_predict))
+    print('Classification Report:\n', classification_report(y_test, y_predict))
+    print("-" * 40)
+    
+models=[
+    LogisticRegression(),RandomForestClassifier(random_state=42),SVC(probability=True),KNeighborsClassifier(),GaussianNB()
+]
+    
+for model in models:
+    evaluate_model(model,x_train_scaled,y_train,x_test_scaled,y_Test)
 
-y_pred=   model.predict(x_test_scaled)
-
-accuracy=accuracy_score(y_Test,y_pred)
-
-print(f"Model Accuracy: {accuracy:.4f}")
-
-# Optional: Confusion Matrix & Classification Report
-print("\nConfusion Matrix:\n", confusion_matrix(y_Test, y_pred))
-print("\nClassification Report:\n", classification_report(y_Test, y_pred))
