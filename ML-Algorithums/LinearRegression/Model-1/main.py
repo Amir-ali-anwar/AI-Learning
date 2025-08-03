@@ -60,6 +60,25 @@ print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
 print("R² Score:", r2_score(y_test, y_pred))
 
 
+models = ['Linear Regression', 'Ridge', 'Lasso']
+r2_scores=[
+    r2_score(y_test,model.predict(X_test)),
+    ridge.score(X_test, y_test),
+    lasso.score(X_test, y_test)
+]
+
+mse_scores= [
+    mean_squared_error(y_test, model.predict(X_test)),
+    mean_squared_error(y_test, ridge.predict(X_test)),
+    mean_squared_error(y_test, lasso.predict(X_test))
+]
+
+
+
+results_df= pd.DataFrame({model:models, 'R² Score': r2_scores,'MSE': mse_scores})
+
+print(results_df)
+
 plt.scatter(y_test,y_pred)
 plt.xlabel("Actual G3")
 plt.ylabel("Predicted G3")
