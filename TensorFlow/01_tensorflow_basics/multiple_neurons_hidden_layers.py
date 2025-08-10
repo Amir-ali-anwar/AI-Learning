@@ -1,5 +1,5 @@
-from tensorflow.keras import keras
-from tensorflow import layers
+from tensorflow import keras
+from tensorflow.keras import layers
 import numpy as np
 
 X = np.array([1, 2, 3, 4, 5], dtype=float)
@@ -14,4 +14,6 @@ model= keras.Sequential([
 
 model.compile(optimizer='adam', loss='mean_squared_error')
 
-model.fit()
+model.fit(X,Y, epochs=10,verbose=0)
+
+print(model.predict(np.array([[2]]))) 
