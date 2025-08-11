@@ -14,6 +14,6 @@ model= keras.Sequential([
 
 model.compile(optimizer='adam', loss='mean_squared_error')
 
-model.fit(X,Y ,epochs=20, verbose=0)
+model.fit(X,Y, epochs=10,verbose=0)
 
-print(model.predict(np.array([[2]])))  
+print(model.predict(np.array([[2]]))) 
