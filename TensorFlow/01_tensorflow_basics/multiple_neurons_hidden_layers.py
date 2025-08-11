@@ -1,17 +1,19 @@
-from tensorflow.keras import keras
-from tensorflow import layers
+from tensorflow import keras
+from tensorflow.keras import layers
 import numpy as np
 
-X = np.array([1, 2, 3, 4, 5], dtype=float)
+X = np.array([1, 2, 3, 4, 5], dtype=float).reshape(-1, 1)
 Y = np.array([2, 4, 6, 8, 10], dtype=float)
 
-
+# print(X)
 model= keras.Sequential([
-    keras.Input(shape=(1,)),
-    keras.Dense(units=3, activation='relu'),
-    layers.Dense(unit=1)
+    keras.layers.Dense(units=3, activation='relu'),
+    keras.layers.Dense(units=2, activation='relu'),
+    keras.layers.Dense(units=1)
 ])
 
 model.compile(optimizer='adam', loss='mean_squared_error')
 
-model.fit()
+model.fit(X,Y ,epochs=20, verbose=0)
+
+print(model.predict(np.array([[2]])))  
