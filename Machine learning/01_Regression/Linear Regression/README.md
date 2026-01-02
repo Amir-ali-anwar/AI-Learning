@@ -31,12 +31,12 @@ The dataset contains **20,640 observations** with **10 attributes**:
 ## 3️⃣ Folder Structure
 
 Linear_Regression/
-├── data/
-│   ├── dataset_imputed.csv        # Raw dataset after initial imputation
-│   └── dataset_processed.csv      # Preprocessed dataset (scaled & encoded)
-├── 01_EDA_and_Preprocessing.ipynb # Exploratory Data Analysis + preprocessing
-├── 02_Linear_Regression_Sklearn.ipynb # Linear Regression implementation using scikit-learn
-└── README.md
+    data/
+        dataset_imputed.csv        # Raw dataset after initial imputation
+        dataset_processed.csv      # Preprocessed dataset (scaled & encoded)
+    01_EDA_and_Preprocessing.ipynb        # Exploratory Data Analysis + preprocessing
+    02_Linear_Regression_Sklearn.ipynb   # Linear Regression implementation using scikit-learn
+    README.md
 
 ---
 
