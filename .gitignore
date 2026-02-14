@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environments
+venv/
+myenv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ML files
+*.csv
+*.xlsx
+*.pkl
+*.h5
+*.pt
+*.zip
+
+# Data & models
+data/
+models/
+
+# VS Code
+.vscode/
