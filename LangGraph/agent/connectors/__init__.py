@@ -6,6 +6,8 @@ from .api_loader import load_api
 from .website_loader import load_website
 from .notion_loader import load_notion
 from .github_loader import load_github
+from .tavily_loader import load_tavily
+from .duckduckgo_loader import load_duckduckgo
 from .schema import Document, DocumentList, DocumentMetadata
 
 __all__ = [
@@ -17,6 +19,8 @@ __all__ = [
     "load_website",
     "load_notion",
     "load_github",
+    "load_tavily",
+    "load_duckduckgo",
     "Document",
     "DocumentList",
     "DocumentMetadata"

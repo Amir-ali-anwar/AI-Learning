@@ -79,6 +79,9 @@ class IngestionPipeline:
         """
         Step 4 & 5: Embed the chunks and store them in the Vector DB.
         """
+        if not splits:
+            return self.get_vectorstore()
+
         print(f"--- [4/5] Embedding & [5/5] Storing in {self.collection_name} ---")
         
         vectorstore = Chroma.from_documents(
@@ -90,6 +93,16 @@ class IngestionPipeline:
         
         print("Ingestion Pipeline completed successfully.")
         return vectorstore
+
+    def get_vectorstore(self) -> Chroma:
+        """
+        Simply loads and returns the existing vectorstore.
+        """
+        return Chroma(
+            persist_directory=self.persist_directory,
+            embedding_function=self.embeddings,
+            collection_name=self.collection_name
+        )
 
     def run(self, loader_func: Optional[Callable] = None, docs: Optional[DocumentList] = None, *args, **kwargs) -> Chroma:
         """
