@@ -1,5 +1,4 @@
 import os
-import re
 from typing import List, TypedDict, Annotated, Sequence
 from operator import add as add_messages
 
@@ -8,8 +7,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.documents import Document as LCDocument
 from langgraph.graph import StateGraph, END
+import json
 
-# Import our new components
+# Custom modules
 from ingestion import IngestionPipeline
 from connectors import load_pdf, load_tavily, load_duckduckgo
 
@@ -24,30 +24,28 @@ PERSIST_DIRECTORY = "./chroma_db"
 COLLECTION_NAME = "stock_market_2024"
 
 # =========================================================
-# 2. STATE DEFINITION
+# 2. STATE
 # =========================================================
 
 class AgentState(TypedDict):
-    """
-    Standardized state for our Hybrid RAG.
-    """
     messages: Annotated[Sequence[BaseMessage], add_messages]
     documents: List[LCDocument]
     generation: str
-    search_needed: bool
+    rewrite_query: str
+    reranked_documents: List[LCDocument]
+    expended_queries: List[str]
+    eval_decision: str  # correct / incorrect / ambiguous
 
 # =========================================================
-# 3. INITIALIZE COMPONENTS
+# 3. LLM & VECTORSTORE
 # =========================================================
 
-# LLM (Groq)
 llm = ChatOpenAI(
     model="llama-3.3-70b-versatile",
     api_key=os.getenv("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1",
 )
 
-# Ingestion Pipeline
 pipeline = IngestionPipeline(
     collection_name=COLLECTION_NAME,
     persist_directory=PERSIST_DIRECTORY,
@@ -55,190 +53,294 @@ pipeline = IngestionPipeline(
     chunk_overlap=200
 )
 
-# Initialize or Load VectorStore
 def initialize_vectorstore():
     if not os.path.exists(PERSIST_DIRECTORY) and os.path.exists(PDF_PATH):
-        print("Initializing Vector DB with Ingestion Pipeline...")
+        print("Initializing Vector DB...")
         return pipeline.run(loader_func=load_pdf, file_path=PDF_PATH)
     else:
-        # Load existing collection
         print("Loading existing ChromaDB...")
         return pipeline.get_vectorstore()
 
 vectorstore = initialize_vectorstore()
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
+def rewrite_query_node(state: AgentState):
+    """Rewrite the query to be more specific."""
+    print("--- [Node] Rewrite Query ---")
+
+    question = state["messages"][-1].content
+    prompt = f"""
+    Rewrite this question to be more specific and detailed:
+
+    {question}
+
+    Do not answer the question. Just rewrite it.
+    """
+
+    response = llm.invoke([HumanMessage(content=prompt)])
+    new_query = response.content.strip()
+
+    print(f"New Query: {new_query}")
+    return {"rewrite_query": new_query}
+
+
+def generate_queries(state: AgentState):
+    print("--- [Node] Generate Queries ---")
+
+    query = state["rewrite_query"]
+    prompt = f"""
+    Generate 4 queries for the following question:
+
+    {query}
+
+    Do not answer the question. Just generate queries.
+    """
+
+    response = llm.invoke([HumanMessage(content=prompt)])
+    try:
+        queries = json.loads(response.content)
+    except:
+        queries = [query]   
+    print("Expanded Queries:", queries)
+    return { "expended_queries": queries}
+
 # =========================================================
-# 4. NODES (Logic Blocks)
+# 4. NODES
 # =========================================================
 
 def retrieve(state: AgentState):
-    """
-    Step 1: Retrieve relevant documents.
-    """
-    print("--- [Node] RETRIEVING FROM INTERNAL DOCS ---")
-    last_message = state["messages"][-1].content
-    docs = retriever.invoke(last_message)
-    return {"documents": docs, "search_needed": False}
+    print("--- [Node] RETRIEVE ---")
+    queries= state["expended_queries"]
+    all_docs=[]
+    for query in queries:
+        docs=retriever.invoke(query)
+        all_docs.extend(docs)
+    
+    #-----------------------
+    # Deduplicate based on metadata
+    unique_docs = {}
+    for d in all_docs:
+        key = (d.page_content, d.metadata.get("source"), d.metadata.get("page"))
+        if key not in unique_docs:
+            unique_docs[key] = d
+
+    final_docs = list(unique_docs.values())
+    
+    #-----------------------
+
+    print("Retrieved Documents:", len(all_docs), "| Unique:", len(final_docs))
+    #-----------------------
+
+    return {"documents": final_docs}
+
+
+def rerank_documents(state: AgentState):
+    print("--- [Node] Rerank Documents ---")
+    documents=state["documents"]
+    question= state["messages"][-1].content
+    scored_docs=[]
+    for doc in documents:
+        prompt = f"""
+        Rate relevance from 1-10.
+
+        Question:
+        {question}
+
+        Document:
+        {doc.page_content[:1500]}
+
+        Return ONLY a number.
+        """
+        response = llm.invoke([HumanMessage(content=prompt)])
+        try:
+            score = float(response.content.strip())
+        except:
+            score = 0.0
+        
+        print(f"  Score: {score}")
+        scored_docs.append((score, doc))
+        
+    # Sort by score
+    scored_docs.sort(key=lambda x: x[0], reverse=True)
+    
+    # Top 3
+    reranked = [d[1] for d in scored_docs[:3]]
+    
+    return {"reranked_documents": reranked, "documents": reranked}
+
+# ---------------- CRAG EVALUATOR ---------------- #
 
 def grade_documents(state: AgentState):
-    """
-    Step 2: Use LLM to determine if the retrieved documents are actually relevant.
-    If zero relevant docs remain, flag for web search.
-    """
-    print("--- [Node] GRADING DOCUMENTS WITH LLM ---")
+    print("--- [Node] CRAG EVALUATOR ---")
+
     question = state["messages"][-1].content
     documents = state["documents"]
-    
-    filtered_docs = []
-    
-    grading_prompt = """You are a grader assessing relevance of a retrieved document to a user question. 
-    If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. 
-    Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.
-    
-    Retrieved Document:
-    {doc_content}
-    
-    User Question: {question}
-    
-    Answer only 'yes' or 'no':"""
 
-    for d in documents:
-        # Ask LLM to grade the document
-        messages = [HumanMessage(content=grading_prompt.format(doc_content=d.page_content, question=question))]
-        response = llm.invoke(messages)
-        score = response.content.strip().lower()
-        
-        if 'yes' in score:
-            print("  - Document: RELEVANT")
-            filtered_docs.append(d)
-        else:
-            print("  - Document: NOT RELEVANT")
-    
-    search_needed = len(filtered_docs) == 0
-    print(f"Total relevant docs: {len(filtered_docs)}. Web search needed: {search_needed}")
-    
-    return {"documents": filtered_docs, "search_needed": search_needed}
+    context = "\n\n".join([d.page_content for d in documents])
+
+    prompt = f"""
+    You are a CRAG evaluator.
+
+    Classify the retrieved context:
+
+    - correct → fully answers the question
+    - incorrect → irrelevant or useless
+    - ambiguous → partially helpful but insufficient
+
+    Question:
+    {question}
+
+    Context:
+    {context}
+
+    Answer ONLY one word: correct, incorrect, or ambiguous.
+    """
+
+    response = llm.invoke([HumanMessage(content=prompt)])
+    decision = response.content.strip().lower()
+
+    print(f"Decision: {decision}")
+
+    return {
+        "documents": documents,
+        "eval_decision": decision
+    }
+
+# ---------------- WEB SEARCH ---------------- #
 
 def web_search(state: AgentState):
-    """
-    Step 3 (Optional): Search the web if internal docs failed.
-    """
-    print("--- [Node] SEARCHING THE WEB ---")
+    print("--- [Node] WEB SEARCH ---")
+
     question = state["messages"][-1].content
-    
-    # Try Tavily first, fallback to DuckDuckGo
-    web_results = load_tavily(question)
-    if not web_results:
-        web_results = load_duckduckgo(question)
-        
-    # Convert to LangChain Documents
+    decision = state.get("eval_decision", "")
+
+    results = load_tavily(question)
+    if not results:
+        results = load_duckduckgo(question)
+
     new_docs = [
         LCDocument(page_content=d["content"], metadata=d["metadata"])
-        for d in web_results
+        for d in results
     ]
-    
+
+    # CRAG behavior
+    if decision == "incorrect":
+        return {"documents": new_docs}
+
+    elif decision == "ambiguous":
+        return {"documents": state["documents"] + new_docs}
+
     return {"documents": new_docs}
 
+# ---------------- GENERATION ---------------- #
+
 def generate(state: AgentState):
-    """
-    Step 4: Generate the final answer.
-    """
-    print("--- [Node] GENERATING ---")
+    print("--- [Node] GENERATE ---")
+
     question = state["messages"][-1].content
     docs = state["documents"]
-    
+
     context = "\n\n".join([d.page_content for d in docs])
-    source_info = "INTERNAL KNOWLEDGE" if not state.get("search_needed") else "EXTERNAL WEB SEARCH"
-    
-    system_prompt = f"""You are an expert financial assistant. 
-    Information Source: {source_info}
-    
-    Use the following context to answer the user's question accurately. 
-    If the context is insufficient, state that clearly.
-    
+
+    decision = state.get("eval_decision", "")
+    if decision == "correct":
+        source = "INTERNAL KNOWLEDGE"
+    else:
+        source = "HYBRID (INTERNAL + WEB)"
+
+    system_prompt = f"""
+    You are an expert financial assistant.
+
+    Source: {source}
+
+    Use the context to answer the question.
+    If insufficient, say so clearly.
+
     CONTEXT:
     {{context}}
     """
-    
+
     messages = [
         SystemMessage(content=system_prompt.format(context=context)),
         HumanMessage(content=question)
     ]
-    
+
     response = llm.invoke(messages)
+
     return {"generation": response.content}
 
 # =========================================================
-# 5. GRAPH CONSTRUCTION
+# 5. ROUTER
 # =========================================================
 
-def decide_to_generate(state: AgentState):
-    """
-    Router: Should we search the web or generate?
-    """
-    if state["search_needed"]:
+def router(state: AgentState):
+    decision = state.get("eval_decision", "").strip().lower()
+
+    if decision == "correct":
+        return "generate"
+
+    elif decision in ["incorrect", "ambiguous"]:
         return "web_search"
+
     return "generate"
+
+# =========================================================
+# 6. GRAPH
+# =========================================================
 
 workflow = StateGraph(AgentState)
 
-# Add Nodes
+# Nodes
 workflow.add_node("retrieve", retrieve)
-workflow.add_node("grade_docs", grade_documents)
+workflow.add_node("grade", grade_documents)
 workflow.add_node("web_search", web_search)
 workflow.add_node("generate", generate)
+workflow.add_node("rewrite_query", rewrite_query_node)
+workflow.add_node("generate_queries", generate_queries)
+workflow.add_node("rerank", rerank_documents)
 
-# Set Flow
-workflow.set_entry_point("retrieve")
-workflow.add_edge("retrieve", "grade_docs")
+# Entry
+workflow.set_entry_point("rewrite_query")
 
-# Conditional Routing
+# Flow
+workflow.add_edge("rewrite_query", "generate_queries")
+workflow.add_edge("generate_queries", "retrieve")
+workflow.add_edge("retrieve", "rerank")
+workflow.add_edge("rerank", "grade")
+
 workflow.add_conditional_edges(
-    "grade_docs",
-    decide_to_generate,
+    "grade",
+    router,
     {
-        "web_search": "web_search",
-        "generate": "generate"
+        "generate": "generate",
+        "web_search": "web_search"
     }
 )
 
 workflow.add_edge("web_search", "generate")
 workflow.add_edge("generate", END)
 
-# Compile
 app = workflow.compile()
 
 # =========================================================
-# 6. RUNNER
+# 7. RUNNER
 # =========================================================
 
-def running_agent():
-    print("\nHybrid RAG Agent Started (Internal Docs + Web Search)")
-    print("Type 'exit' to quit\n")
+def run():
+    print("\nCRAG RAG Agent Running...\n(Type 'exit' to quit)\n")
 
     while True:
-        question = input("Ask your question: ").strip()
+        q = input("Ask: ").strip()
 
-        if question.lower() in ["exit", "quit"]:
-            print("Goodbye!")
+        if q.lower() in ["exit", "quit"]:
             break
 
-        if not question:
-            continue
+        result = app.invoke({
+            "messages": [HumanMessage(content=q)]
+        })
 
-        try:
-            # Invoke graph
-            result = app.invoke({
-                "messages": [HumanMessage(content=question)]
-            })
-
-            print("\nFinal Answer:\n")
-            print(result["generation"])
-            print("\n" + "=" * 80 + "\n")
-
-        except Exception as e:
-            print(f"Agent Error: {e}")
+        print("\nAnswer:\n", result["generation"])
+        print("\n" + "="*80 + "\n")
 
 if __name__ == "__main__":
-    running_agent()
+    run()
